@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title></title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="" />
+</head>
+
+<body>
+    <header>
+        <div><b>ToDo Application</b></div>
+        <div><i>To get the basic idea of how <b>React</b> works</i></div>
+    </header>
+    <br /><br />
+    <input oninput="checkValidId()" type="text" placeholder="ID to update" id="inputId" />
+    <p id="error" style="font-size: 8px;position: absolute;"></p>
+    <br /><br />
+    <div>
+        <button onclick="updateToDo()">Update</button>
+        <p style="font-size: 8px;">*replace below content with this existing id</p>
+    </div>
+    <br /><br />
+    <input type="text" placeholder="Add Title" id="inputTitle" />
+    <br /><br />
+    <input type="text" placeholder="Add Description" id="inputDesc" />
+    <br /><br />
+    <button onclick="addToDo()" style="cursor: pointer;">Add ToDo</button>
+    <br />
+    <div id="todosList"></div>
+
+    <script async defer>
+        let globalId = 0;
+        let toDosState = [];
+
+        function addToDo() {
+            const title = document.getElementById("inputTitle").value;
+            const desc = document.getElementById("inputDesc").value;
+            if (title && desc) {
+                toDosState.push({
+                    title: title,
+                    description: desc,
+                    id: globalId + 1,
+                    completed: false
+                });
+                globalId++;
+                updateTodos();
+            }
+        }
+
+        function checkValidId() {
+            const id = document.getElementById("inputId").value;
+            const error = document.getElementById("error");
+            if (!id) {
+                error.innerHTML = ""
+            } else if (!isNaN(parseInt(id))) {
+                const checkTdo = toDosState.filter((todo) => todo.id === parseInt(id))
+                if (!checkTdo.length) {
+                    error.innerHTML = "Id dosen't exist!"
+                    error.style.color = 'red'
+                } else {
+                    error.innerHTML = "Id exist"
+                    error.style.color = 'blue'
+                }
+            } else {
+                error.innerHTML = "Id must be valid integer"
+                error.style.color = 'red'
+            }
+        }
+
+        function updateToDo() {
+            const id = document.getElementById("inputId").value;
+            const title = document.getElementById("inputTitle").value;
+            const desc = document.getElementById("inputDesc").value;
+            if (!isNaN(parseInt(id)) && title && desc) {
+                toDosState = toDosState.map((todo) => {
+                    if (todo.id === parseInt(id)) {
+                        return {
+                            ...todo,
+                            title: title,
+                            description: desc,
+                        }
+                    }
+                    return todo;
+                })
+                updateTodos()
+            }
+        }
+
+        function removeToDo(id) {
+            toDosState = toDosState.filter((todo) => todo.id !== id);
+            updateTodos();
+        }
+
+        function toggleToDoStatus(id) {
+            toDosState = toDosState.map((todo) => {
+                if (todo.id === id) {
+                    return {
+                        ...todo,
+                        completed: !todo.completed
+                    }
+                }
+                return todo;
+            })
+
+            updateTodos();
+        }
+
+        function updateTodos() {
+            const todos = document.getElementById("todosList");
+            const oldTodos = Array.from(todos.children);
+            const newToDos = toDosState.map((todo) => createToDoItem(todo));
+
+            const patches = diff(oldTodos, newToDos);
+
+            updateDomWithPatches(patches);
+        }
+
+        function createToDoItem(toDo) {
+            const outerDiv = document.createElement("div");
+            const titleDiv = document.createElement("div");
+            const descDiv = document.createElement("div");
+            const doneDiv = document.createElement("button");
+            const removeDiv = document.createElement("button");
+
+            titleDiv.innerHTML = `${toDo.id}. ${toDo.title}`;
+            descDiv.innerHTML = toDo.description;
+            doneDiv.innerHTML = toDo.completed ? "Done" : "Mark as done";
+            removeDiv.innerHTML = "Remove";
+
+            outerDiv.setAttribute("id", toDo.id);
+            outerDiv.setAttribute("style", "border:1px solid grey; padding:4px;margin-top:8px;max-width:400px;overflow-wrap");
+            titleDiv.setAttribute("style", " font-weight:800;")
+            doneDiv.setAttribute("style", "cursor:pointer")
+            removeDiv.setAttribute("style", "cursor:pointer")
+            doneDiv.setAttribute("onclick", `toggleToDoStatus(${toDo.id})`);
+            removeDiv.setAttribute("onclick", `removeToDo(${toDo.id})`);
+
+            outerDiv.appendChild(titleDiv);
+            outerDiv.appendChild(descDiv);
+            outerDiv.appendChild(doneDiv);
+            outerDiv.appendChild(removeDiv);
+
+            return outerDiv;
+        }
+
+        function diff(oldTodos, newTodos) {
+            let patches = [];
+            oldTodos.forEach((todo, index) => {
+                if (index >= newTodos.length) {
+                    patches.push({
+                        type: "remove",
+                        oldToDo: todo,
+                    });
+                } else if (!isEqualToDo(todo, newTodos[index])) {
+                    patches.push({
+                        type: "replace",
+                        oldToDo: todo,
+                        newToDo: newTodos[index],
+                    });
+                }
+            });
+
+            if (newTodos.length > oldTodos.length) {
+                newTodos.slice(oldTodos.length).forEach((newtodo) => {
+                    patches.push({
+                        type: "add",
+                        newToDo: newtodo,
+                    });
+                });
+            }
+
+            return patches;
+        }
+
+        function isEqualToDo(oldToDo, newTodo) {
+            return (
+                parseInt(oldToDo.id) === parseInt(newTodo.id) && oldToDo.innerHTML === newTodo.innerHTML
+            );
+        }
+
+        function updateDomWithPatches(patches) {
+            const toDosDiv = document.getElementById("todosList");
+            patches.forEach((patch) => {
+                if (patch.type === "remove") {
+                    toDosDiv.removeChild(patch.oldToDo);
+                } else if (patch.type === "replace") {
+                    toDosDiv.replaceChild(patch.newToDo, patch.oldToDo);
+                } else {
+                    toDosDiv.appendChild(patch.newToDo);
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
