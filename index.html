@@ -33,9 +33,12 @@
     <div id="todosList"></div>
 
     <script async defer>
+        //global id to set unique id
         let globalId = 0;
+        //global state to maintain updated todos
         let toDosState = [];
 
+        //add todo to the list of todos
         function addToDo() {
             const title = document.getElementById("inputTitle").value;
             const desc = document.getElementById("inputDesc").value;
@@ -51,6 +54,8 @@
             }
         }
 
+        //this is for updating the existing todo
+        //checking id exist or not, valid id or not
         function checkValidId() {
             const id = document.getElementById("inputId").value;
             const error = document.getElementById("error");
@@ -71,6 +76,9 @@
             }
         }
 
+        //to update the existing todo
+        //get the id from input
+        //call the updatetodos
         function updateToDo() {
             const id = document.getElementById("inputId").value;
             const title = document.getElementById("inputTitle").value;
@@ -90,11 +98,15 @@
             }
         }
 
+        //to remove the existing todo
+        //update the global todosState using param id
+        //call the updatetodos
         function removeToDo(id) {
             toDosState = toDosState.filter((todo) => todo.id !== id);
             updateTodos();
         }
 
+        //toggle the status of todo
         function toggleToDoStatus(id) {
             toDosState = toDosState.map((todo) => {
                 if (todo.id === id) {
@@ -109,6 +121,9 @@
             updateTodos();
         }
 
+        //get the both dom old and new one
+        //compare it using the diff algo
+        //then update the actual dom with changes
         function updateTodos() {
             const todos = document.getElementById("todosList");
             const oldTodos = Array.from(todos.children);
@@ -119,6 +134,7 @@
             updateDomWithPatches(patches);
         }
 
+        //creates the todo Item
         function createToDoItem(toDo) {
             const outerDiv = document.createElement("div");
             const titleDiv = document.createElement("div");
@@ -147,6 +163,8 @@
             return outerDiv;
         }
 
+        //diff algo to compare the old and new dom
+        //then set the satus based on comparision and return that chnages
         function diff(oldTodos, newTodos) {
             let patches = [];
             oldTodos.forEach((todo, index) => {
@@ -176,12 +194,15 @@
             return patches;
         }
 
+        //check if old and new todo is same
+        //it it same won't change anything
         function isEqualToDo(oldToDo, newTodo) {
             return (
                 parseInt(oldToDo.id) === parseInt(newTodo.id) && oldToDo.innerHTML === newTodo.innerHTML
             );
         }
 
+        //updating the actual dom based on changes after comparision
         function updateDomWithPatches(patches) {
             const toDosDiv = document.getElementById("todosList");
             patches.forEach((patch) => {
